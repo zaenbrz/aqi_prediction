@@ -1,64 +1,38 @@
-import datetime
 import os
-import json
 import requests
+import pandas as pd
+from datetime import datetime
 
-# ==== CONFIGURATION ====
-cities = {
-    "Karachi": {"lat": 24.8607, "lon": 67.0011},
-    "Lahore": {"lat": 31.5497, "lon": 74.3436},
-    "Islamabad": {"lat": 33.6844, "lon": 73.0479}
-}
-OPENWEATHER_API_KEY = os.environ["OPENWEATHER_API_KEY"]
-if not OPENWEATHER_API_KEY:
-    raise EnvironmentError("❌ OPENWEATHER_API_KEY not found in environment variables.")
-DATA_DIR = "aqi_data"
-os.makedirs(DATA_DIR, exist_ok=True) 
+# Ensure the output directory exists
+os.makedirs("aqi_data", exist_ok=True)
 
-# Create storage directory if not exists
-os.makedirs(DATA_DIR, exist_ok=True)
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
+CITY = "Islamabad"
+URL = f"http://api.openweathermap.org/data/2.5/air_pollution?appid={API_KEY}"
 
-# ==== HELPER FUNCTION ====
-def fetch_weather_data(lat, lon):
-    open_meteo_url = (
-        f"https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}"
-        f"&hourly=temperature_2m,wind_speed_10m,shortwave_radiation,direct_radiation"
-        f"&daily=dominant_wind_direction_10m_dominant"
-        f"&timezone=Asia/Karachi"
-    )
-    response = requests.get(open_meteo_url)
-    return response.json()
+# Get coordinates for the city using OpenWeather geocoding API
+geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={CITY}&limit=1&appid={API_KEY}"
+geo_res = requests.get(geo_url)
 
-def fetch_pollution_data(lat, lon):
-    openweather_url = (
-        f"http://api.openweathermap.org/data/2.5/air_pollution/forecast"
-        f"?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
-    )
-    response = requests.get(openweather_url)
-    return response.json()
+if geo_res.status_code != 200 or not geo_res.json():
+    raise Exception(f"Failed to fetch geolocation for city {CITY}: {geo_res.text}")
 
-# ==== MAIN SCRIPT ====
-today = datetime.datetime.now().strftime("%Y-%m-%d")
-data_output = {}
+lat = geo_res.json()[0]['lat']
+lon = geo_res.json()[0]['lon']
 
-for city, coords in cities.items():
-    print(f"Fetching data for {city}...")
+# Now fetch AQI data
+aqi_url = f"{URL}&lat={lat}&lon={lon}"
+res = requests.get(aqi_url)
 
-    # Fetch weather and pollution data
-    weather = fetch_weather_data(coords["lat"], coords["lon"])
-    pollution = fetch_pollution_data(coords["lat"], coords["lon"])
+if res.status_code != 200:
+    raise Exception(f"Failed to fetch AQI data: {res.text}")
 
-    # Combine results
-    data_output[city] = {
-        "date": today,
-        "weather": weather,
-        "pollution": pollution
-    }
+data = res.json()
+timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
 
-# Save data to file
-output_file = os.path.join(DATA_DIR, f"aqi_data_{today}.json")
-with open(output_file, "w") as f:
-    json.dump(data_output, f, indent=2)
+# Save to JSON
+out_path = f"aqi_data/{CITY.lower()}_{timestamp}.json"
+with open(out_path, "w") as f:
+    f.write(res.text)
 
-print(f"✅ Data saved to {output_file}")
+print(f"AQI data saved to {out_path}")
