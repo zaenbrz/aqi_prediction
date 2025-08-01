@@ -25,7 +25,7 @@ jobs:
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        python daily_aqi_data_collector.py
+        python data_collector.py
 
     - name: Commit & Push collected data
       run: |
