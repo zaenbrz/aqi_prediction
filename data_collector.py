@@ -1,38 +1,68 @@
 import os
 import requests
-import pandas as pd
+import json
 from datetime import datetime
 
-# Ensure the output directory exists
-os.makedirs("aqi_data", exist_ok=True)
-
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
-CITY = "Islamabad"
-URL = f"http://api.openweathermap.org/data/2.5/air_pollution?appid={API_KEY}"
+CITIES = ["Lahore", "Karachi", "Islamabad"]
+DATA_DIR = "aqi_data"
+DATA_FILE = os.path.join(DATA_DIR, "aqi_data.json")
 
-# Get coordinates for the city using OpenWeather geocoding API
-geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={CITY}&limit=1&appid={API_KEY}"
-geo_res = requests.get(geo_url)
+if not API_KEY:
+    raise Exception("Missing OPENWEATHER_API_KEY in environment!")
 
-if geo_res.status_code != 200 or not geo_res.json():
-    raise Exception(f"Failed to fetch geolocation for city {CITY}: {geo_res.text}")
+os.makedirs(DATA_DIR, exist_ok=True)
 
-lat = geo_res.json()[0]['lat']
-lon = geo_res.json()[0]['lon']
+# Load existing data
+if os.path.exists(DATA_FILE):
+    with open(DATA_FILE, "r") as f:
+        try:
+            existing_data = json.load(f)
+        except json.JSONDecodeError:
+            existing_data = []
+else:
+    existing_data = []
 
-# Now fetch AQI data
-aqi_url = f"{URL}&lat={lat}&lon={lon}"
-res = requests.get(aqi_url)
+for city in CITIES:
+    print(f"Collecting data for {city}...")
 
-if res.status_code != 200:
-    raise Exception(f"Failed to fetch AQI data: {res.text}")
+    weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+    weather_response = requests.get(weather_url)
 
-data = res.json()
-timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
+    if weather_response.status_code != 200:
+        print(f"Failed to get weather data for {city}")
+        continue
 
-# Save to JSON
-out_path = f"aqi_data/{CITY.lower()}_{timestamp}.json"
-with open(out_path, "w") as f:
-    f.write(res.text)
+    weather_data = weather_response.json()
+    lat = weather_data["coord"]["lat"]
+    lon = weather_data["coord"]["lon"]
 
-print(f"AQI data saved to {out_path}")
+    aqi_url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
+    aqi_response = requests.get(aqi_url)
+
+    if aqi_response.status_code != 200:
+        print(f"Failed to get AQI data for {city}")
+        continue
+
+    aqi_json = aqi_response.json()
+    aqi_main = aqi_json["list"][0]
+
+    entry = {
+        "city": city,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "aqi_level": aqi_main["main"]["aqi"],
+        "components": aqi_main["components"],
+        "weather": {
+            "temperature": weather_data["main"]["temp"],
+            "humidity": weather_data["main"]["humidity"],
+            "condition": weather_data["weather"][0]["description"]
+        }
+    }
+
+    existing_data.append(entry)
+
+# Save all collected entries back
+with open(DATA_FILE, "w") as f:
+    json.dump(existing_data, f, indent=2)
+
+print("✅ AQI & weather data collected and saved for all cities.")
