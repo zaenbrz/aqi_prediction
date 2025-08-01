@@ -9,7 +9,7 @@ cities = {
     "Lahore": {"lat": 31.5497, "lon": 74.3436},
     "Islamabad": {"lat": 33.6844, "lon": 73.0479}
 }
-OPENWEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY"  # Replace with your API key
+OPENWEATHER_API_KEY = os.environ["OPENWEATHER_API_KEY"]
 DATA_DIR = "aqi_data"
 
 # Create storage directory if not exists
