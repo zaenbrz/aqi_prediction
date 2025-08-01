@@ -10,7 +10,10 @@ cities = {
     "Islamabad": {"lat": 33.6844, "lon": 73.0479}
 }
 OPENWEATHER_API_KEY = os.environ["OPENWEATHER_API_KEY"]
+if not OPENWEATHER_API_KEY:
+    raise EnvironmentError("❌ OPENWEATHER_API_KEY not found in environment variables.")
 DATA_DIR = "aqi_data"
+os.makedirs(DATA_DIR, exist_ok=True) 
 
 # Create storage directory if not exists
 os.makedirs(DATA_DIR, exist_ok=True)
