@@ -6178,5 +6178,65 @@
       "humidity": 24,
       "condition": "clear sky"
     }
+  },
+  {
+    "city": "Lahore",
+    "timestamp": "2025-11-10T03:49:50.426480Z",
+    "aqi_level": 5,
+    "components": {
+      "co": 869.39,
+      "no": 1.78,
+      "no2": 11.09,
+      "o3": 51.62,
+      "so2": 3.5,
+      "pm2_5": 139.67,
+      "pm10": 237.47,
+      "nh3": 13.76
+    },
+    "weather": {
+      "temperature": 14.99,
+      "humidity": 58,
+      "condition": "smoke"
+    }
+  },
+  {
+    "city": "Karachi",
+    "timestamp": "2025-11-10T03:49:50.747481Z",
+    "aqi_level": 3,
+    "components": {
+      "co": 105.41,
+      "no": 0.01,
+      "no2": 0.07,
+      "o3": 108.66,
+      "so2": 0.31,
+      "pm2_5": 24.36,
+      "pm10": 76.18,
+      "nh3": 0
+    },
+    "weather": {
+      "temperature": 19.9,
+      "humidity": 77,
+      "condition": "smoke"
+    }
+  },
+  {
+    "city": "Islamabad",
+    "timestamp": "2025-11-10T03:49:51.076572Z",
+    "aqi_level": 5,
+    "components": {
+      "co": 914.61,
+      "no": 5.07,
+      "no2": 21,
+      "o3": 50.96,
+      "so2": 3.73,
+      "pm2_5": 84.13,
+      "pm10": 162.31,
+      "nh3": 80.56
+    },
+    "weather": {
+      "temperature": 19.86,
+      "humidity": 26,
+      "condition": "clear sky"
+    }
   }
 ]
